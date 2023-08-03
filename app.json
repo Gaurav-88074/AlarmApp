@@ -1,0 +1,8 @@
+{
+  "name": "Alarm",
+  "displayName": "Alarm",
+  "android": {
+    "useNextNotificationsApi": true
+  }
+}
+
