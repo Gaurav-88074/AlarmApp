@@ -21,35 +21,16 @@ import { dataSliceActions } from '../toolkit/DataSlice';
 import { computeScheduleDate } from '../logic/TimeLogic';
 import { computeDifferenceStatement } from '../logic/TimeLogic';
 import { convertTo12HourFormat } from '../logic/TimeLogic';
+import { scheduleAlarmById} from '../logic/ScheduleNotification';
 //-----------
 const AlarmCard = ({ alarmObj, navigation }) => {
     // console.log("rendered");
-
     const dispatch = useDispatch()
     const alarmModelObj = new AlarmModel(alarmObj);
     // console.log(alarmModelObj);
-
-    //----------------------------------------------------------
     //=================================================================
     //=================================================================
-    Notifications.setNotificationHandler({
-        handleNotification: async () => {
-            return {
-                shouldPlaySound: true,
-                shouldSetBadge:  false,
-                shouldShowAlert: true,
-            };
-        },
-    });
     
-    //--------------
-    // Notifications.setNotificationChannelAsync('special', {
-    //     name: 'Special Channel',
-    //     importance: Notifications.AndroidImportance.HIGH,
-    //     sound: true,
-        
-    // });
-    //--------------
     async function scheduleNotificationHandler(params) {
         Notifications.cancelScheduledNotificationAsync(alarmModelObj.id);
         async function performSchedulingComputation(params) {
@@ -79,17 +60,45 @@ const AlarmCard = ({ alarmObj, navigation }) => {
                 identifier : alarmModelObj.id
 
             })
+            // console.log(alarmModelObj);
+            let triggerSeconds = (schedule_date.getTime() - new Date(Date.now()).getTime()) / 1000
+            alarmModelObj.intervalList.forEach(async(obj)=>{
+                triggerSeconds+=Number(obj.minute) * 60 + Number(obj.second);
+                Notifications.scheduleNotificationAsync({
+                    content: {
+                        title: "Alarm Interval",
+                        body: "I'm ringing right now",
+                        data: {
+                            username: "Gaurav"
+                        },
+                        // sound: "brown",
+                        vibrate: [1, 2, 1],
+                    },
+                    // trigger : null
+                    trigger: {
+                        'seconds': triggerSeconds
+                    },
+                    // channelId: 'special'
+                    identifier : obj.id
+    
+                })
+            })
         })
     }
     //=================================================================
-
+    async function cancelNotificationHandler(params){
+        Notifications.cancelScheduledNotificationAsync(alarmModelObj.id);
+        alarmModelObj.intervalList.forEach(async(obj)=>{
+            Notifications.cancelScheduledNotificationAsync(obj.id);
+        })
+    }
     //=================================================================
     const [isEnabled, setIsEnabled] = useState(alarmModelObj.active_status == "1" ? true : false);
     const toggleSwitch = () => {
         setIsEnabled((previousState) => !previousState);
         if (!isEnabled) {
             alarmModelObj.active_status = true;
-            updateOneAlarm(alarmModelObj).then(() => {
+            updateOneAlarm(alarmModelObj).then(async() => {
                 scheduleNotificationHandler();
                 ToastAndroid.show(alarmInStatement, ToastAndroid.SHORT);
             })
@@ -98,9 +107,9 @@ const AlarmCard = ({ alarmObj, navigation }) => {
             alarmModelObj.active_status = false;
             updateOneAlarm(alarmModelObj).then(() => {
                 ToastAndroid.show("disabled", ToastAndroid.SHORT);
-                Notifications.cancelScheduledNotificationAsync(alarmModelObj.id);
+                cancelNotificationHandler();
             })
-            setAlarmInStatement("");
+            // setAlarmInStatement("");
         }
     }
     //----------------------------------------------------------------

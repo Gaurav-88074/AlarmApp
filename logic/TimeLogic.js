@@ -67,18 +67,11 @@ export const computeDifferenceStatement = (currentDate, scheduleDate) => {
     return res + ` ${displaySecond} seconds`;
 }
 export function convertTo24HourFormat(thatHours, thatMinutes, mode) {
-    if(thatHours>12){
-        return [thatHours,thatMinutes]
-    }
-    let hours = parseInt(thatHours);
+    let hours = parseInt(thatHours)%12;
     const minutes = parseInt(thatMinutes);
-
-    if (mode == 'PM' && hours != 12) {
+    if (mode == 'PM') {
         hours += 12;
-    } else if (mode == 'AM' && hours == 12) {
-        hours = 0;
     }
-
     const hoursIn24Format = hours
     const minutesIn24Format = minutes;
 
@@ -87,7 +80,8 @@ export function convertTo24HourFormat(thatHours, thatMinutes, mode) {
 //-------------
 export function convertTo12HourFormat(hour,minute) {
     
-  
+    hour = parseInt(hour);
+    minute = parseInt(minute);
     // Convert hours to 12-hour format
     const hour12 = hour == 0 ? 12 : hour > 12 ? hour - 12 : hour;
   

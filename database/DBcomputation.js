@@ -72,6 +72,9 @@ const DBcomputation = () => {
                 });
             })
             .then((array)=>{
+                return JSON.parse(JSON.stringify(array))
+            })
+            .then((array)=>{
                 // console.log(array);
                 FetchAndSetRedux(array,dispatch);
             })

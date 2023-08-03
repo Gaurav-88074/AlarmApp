@@ -29,6 +29,7 @@ import { insertOneAlarm } from '../database/databaseSetup';
 import { dataSliceActions } from '../toolkit/DataSlice';
 //-----------------------------------------------------------
 import { convertTo24HourFormat } from '../logic/TimeLogic';
+import { convertTo12HourFormat } from '../logic/TimeLogic';
 import { computeScheduleDate } from '../logic/TimeLogic';
 import { computeDifferenceStatement } from '../logic/TimeLogic';
 import { giveAnswer } from '../logic/TimeLogic';
@@ -36,7 +37,6 @@ import { giveAnswer } from '../logic/TimeLogic';
 const AddAlarmScreen = ({ navigation, route }) => {
     // console.log(navigation);
     // console.log(route);
-
     //-----------------------------------------------------
     const dispatch = useDispatch();
     //-----------------------------------------------------
@@ -47,16 +47,6 @@ const AddAlarmScreen = ({ navigation, route }) => {
         return value;
     }
     const [isEnabled, setIsEnabled] = useState(true);
-    
-    //-----------------------------------------------------------------------
-    // const hourDuration = route.params.hourDuration;
-    // const minuteDuration = route.params.minuteDuration;
-    // const timeModeV = route.params.timeModeV;
-    //------------------------------------------------------------------------
-    //no longer in use
-    // const [hours, setHours] = useState(hourDuration);
-    // const [minutes, setMinutes] = useState(minuteDuration);
-    // const [timeMode, setTimeMode] = useState(timeModeV);
     //-----------------------------------------------------------------
     const [currentDate, setCurrentDate] = useState(new Date(Date.now()))
     const [schedule_date, setScheduleDate] = useState(
@@ -79,29 +69,8 @@ const AddAlarmScreen = ({ navigation, route }) => {
     const [ends_after, setEnds_after] = useState("10")
     //-----------------------------------------------------------------------
     const toggleSwitch = () => setVibrate(previousState => !previousState);
-    //------------------------------------
-    // useEffect(() => {
-    //         const [hoursIn24FormatTemp, minutesIn24FormatTemp] = convertTo24HourFormat(hour, minute, mode);
-    //         //--------
-    //         setHoursIn24Format(hoursIn24FormatTemp);
-    //         setMinutesIn24Format(minutesIn24FormatTemp);
-    //         //--------
-    //         setHours(hoursIn24FormatTemp);
-    //         setMinutes(minutesIn24FormatTemp);
-    //         //--------
-    //         setCurrentDate(new Date(Date.now()))
-    //         setScheduleDate(computeScheduleDate(hoursIn24Format, minutesIn24Format));
-    //         // console.log(hour,minute);
-    //         // console.log("i'm happening");
-    // }, [])
-    //------------------------------------
     //-----------------------------------------------------------------------
     const saveHeaderButtonHandler = () => {
-        // setVibrate(isEnabled)
-        //-------------------
-        // const [hoursIn24Format, minutesIn24Format] = convertTo24HourFormat(hour, minute, mode);
-        // setHours(hoursIn24Format);
-        // setMinutes(minutesIn24Format);
         //-------------------
         async function getComputationDone(){
             return new Promise((resolve,reject)=>{
@@ -109,7 +78,7 @@ const AddAlarmScreen = ({ navigation, route }) => {
             })
         }
         getComputationDone().then(([hour, minute])=>{
-            // console.log(hour,minute);
+            console.log(hour,minute);
             const alarmObj = new AlarmModel({
                 id, label, hour, minute,
                 mode, ringtone, ringtone_location,
@@ -117,7 +86,7 @@ const AddAlarmScreen = ({ navigation, route }) => {
             })
             return alarmObj;
         }).then((alarmObj)=>{
-            // console.log(alarmObj);
+            console.log(alarmObj);
             insertOneAlarm(alarmObj).then(() => {
                 navigation.goBack();
                 dispatch(dataSliceActions.toggleRefresh());
@@ -190,8 +159,12 @@ const AddAlarmScreen = ({ navigation, route }) => {
         )
 
     }
-
-    //-------------------------------------------------------------------
+    //-----------------------------------------------------------------------
+    function displayTimeInText(hour,minute,mode) {
+        const [hourIn12Format,minuteIn12Format]=convertTo12HourFormat(hour,minute,mode);
+        return `${makeItProperNumber(hourIn12Format)} : ${makeItProperNumber(minuteIn12Format)} ${mode}`
+    }
+    //-----------------------------------------------------------------------
     return (
         <View style={styles.container}>
             <View style={styles.dateSection}>
@@ -283,7 +256,7 @@ const AddAlarmScreen = ({ navigation, route }) => {
             </View>
             <View style={styles.optionSection}>
                 <Text style={styles.optionTextSpecial}>
-                    {`${makeItProperNumber(hour)} : ${makeItProperNumber(minute)} ${mode}`}
+                    {displayTimeInText(hour,minute,mode)}
                 </Text>
             </View>
             <View style={styles.optionSection}>
@@ -320,7 +293,11 @@ const AddAlarmScreen = ({ navigation, route }) => {
                 <Text style={styles.optionTextRight}>6hrs</Text>
                 <Icon name="right" size={16} color="#505050" />
             </View>
-            <Button title='only i can save u' onPress={saveHeaderButtonHandler}></Button>
+            {/* <View style={styles.optionSection}>
+                <Text style={styles.optionTextLeft}>Label</Text>
+                <Text style={styles.optionTextRight}>Alarm</Text>
+                <Icon name="edit" size={16} color="#505050" />
+            </View> */}
         </View>
     );
 };

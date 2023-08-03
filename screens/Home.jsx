@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import Icon from 'react-native-vector-icons/AntDesign';
 import { useEffect } from 'react';
+import * as Notifications from 'expo-notifications';
 //--------------------------------------------------------------
 import AlarmScreen from './AlarmScreen';
 import AlarmSettings from './AlarmSettings';
@@ -16,6 +17,16 @@ import { buttonSliceActions } from '../toolkit/ButtonSlice';
 //--------------------------------------------------------------
 import DBcomputation from '../database/DBcomputation';
 //--------------------------------------------------------------
+Notifications.setNotificationHandler({
+    handleNotification: async () => {
+        return {
+            shouldPlaySound: true,
+            shouldSetBadge:  false,
+            shouldShowAlert: true,
+        };
+    },
+});
+//-------------------------------------
 const Stack = createNativeStackNavigator();
 const Home = () => {
     //----------------------------------------------------------
