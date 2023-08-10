@@ -19,6 +19,8 @@ import Icon from 'react-native-vector-icons/AntDesign';
 import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { dataSliceActions } from '../toolkit/DataSlice';
+import { intervalSliceActions } from '../toolkit/IntervalSlice';
+import { useSelector } from 'react-redux';
 //-----------------------------------------------------
 import { AlarmModel } from '../models/AlarmModel';
 import { updateOneAlarm, deleteOneAlarm } from '../database/databaseSetup';
@@ -80,19 +82,24 @@ const AlarmSettings = ({ navigation, route }) => {
                             alarmModelObj.ends_after = ends_after;
                             alarmModelObj.intervalList = intervalList;
                             //------------
-                            async function getComputationDone(){
-                                return new Promise((resolve,reject)=>{
-                                    resolve(convertTo24HourFormat(hour,minute,mode));
+                            async function getComputationDone() {
+                                return new Promise((resolve, reject) => {
+                                    resolve(convertTo24HourFormat(hour, minute, mode));
                                 })
                             }
-                            getComputationDone().then(([hoursIn24FormatTemp, minutesIn24FormatTemp])=>{
-                                alarmModelObj.hour =hoursIn24FormatTemp;
-                                alarmModelObj.minute=minutesIn24FormatTemp;
-                                alarmModelObj.active_status=false;
+                            getComputationDone().then(([hoursIn24FormatTemp, minutesIn24FormatTemp]) => {
+                                alarmModelObj.hour = hoursIn24FormatTemp;
+                                alarmModelObj.minute = minutesIn24FormatTemp;
+                                alarmModelObj.active_status = false;
                                 // console.log(alarmModelObj);
                                 updateOneAlarm(alarmModelObj).then(() => {
                                     navigation.goBack();
-                                    dispatch(dataSliceActions.toggleRefresh());
+                                    dispatch(dataSliceActions.setAlarmByAlarmId(
+                                        {
+                                            alarmId  :id,
+                                            alarmObj :alarmModelObj
+                                        }
+                                    ));
                                 })
                             })
                         }}
@@ -106,10 +113,16 @@ const AlarmSettings = ({ navigation, route }) => {
         mode, ringtone, ringtone_location,
         vibrate, active_status, ends_after, intervalList])
     //-----------------------------------------------------------------------
-    function displayTimeInText(hour,minute,mode) {
-        const [hourIn12Format,minuteIn12Format]=convertTo12HourFormat(hour,minute,mode);
+    function displayTimeInText(hour, minute, mode) {
+        const [hourIn12Format, minuteIn12Format] = convertTo12HourFormat(hour, minute, mode);
         return `${makeItProperNumber(hourIn12Format)} : ${makeItProperNumber(minuteIn12Format)} ${mode}`
     }
+    //-----------------------------------------------------------------------
+    // dispatch(intervalSliceActions.setIntervalListOfThisAlarmId({
+    //     alarmId : id,
+    //     intervalList : intervalList
+    // }))
+    // this was  creating an probelem
     //-----------------------------------------------------------------------
     return (
         <View style={styles.container}>
@@ -199,7 +212,7 @@ const AlarmSettings = ({ navigation, route }) => {
             </View>
             <View style={styles.optionSection}>
                 <Text style={styles.optionTextSpecial}>
-                    {displayTimeInText(hour,minute,mode)}
+                    {displayTimeInText(hour, minute, mode)}
                 </Text>
             </View>
             <View style={styles.optionSection}>
@@ -211,8 +224,7 @@ const AlarmSettings = ({ navigation, route }) => {
                 style={styles.optionSection}
                 onPress={() => {
                     navigation.navigate('IntervalScreen', {
-                        alarm_id: id,
-                        intervalList: intervalList
+                        alarmId: id,
                     });
                 }}>
                 <Text style={styles.optionTextLeft}>Interval</Text>

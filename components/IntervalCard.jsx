@@ -15,7 +15,8 @@ import Icon from 'react-native-vector-icons/AntDesign';
 import { DeleteIntervalByIntervalID } from '../database/databaseSetup';
 import { useDispatch } from 'react-redux';
 import { dataSliceActions } from '../toolkit/DataSlice';
-const IntervalCard = ({ minuteDuration,secondDuration, navigation,id,alarm_id}) => {
+import { intervalSliceActions } from '../toolkit/IntervalSlice';
+const IntervalCard = ({ minuteDuration,secondDuration, navigation,id,alarmId}) => {
     const dispatch = useDispatch();
     //--------------------------------------------------------------------
     const [isEnabled, setIsEnabled] = useState(false);
@@ -26,13 +27,13 @@ const IntervalCard = ({ minuteDuration,secondDuration, navigation,id,alarm_id}) 
     return (
         <View style={styles.container}>
             <Pressable
-                onPress={() => {
-                    navigation.navigate("AddIntervalScreen",{
-                        minuteDuration ,
-                        secondDuration 
-                    })
-                    // console.log("I'm not going anywhere");
-                }}
+                // onPress={() => {
+                //     navigation.navigate("AddIntervalScreen",{
+                //         minuteDuration ,
+                //         secondDuration 
+                //     })
+                //     // console.log("I'm not going anywhere");
+                // }}
                 android_ripple={{
                     color: '#505050',
                 }}
@@ -58,9 +59,14 @@ const IntervalCard = ({ minuteDuration,secondDuration, navigation,id,alarm_id}) 
                     <Pressable onPress={() => {
                         // console.log("delete");
                         DeleteIntervalByIntervalID(id).then((message)=>{
-                            console.log(message);
-                            dispatch(dataSliceActions.toggleRefresh());
-                            navigation.popToTop();
+                            // console.log(message);
+                            // dispatch(dataSliceActions.toggleRefresh());
+                            dispatch(intervalSliceActions.deleteIntervalListOfThisAlarmId(
+                                {
+                                    alarmId : alarmId,
+                                    intervalId :id
+                                }
+                            ))
                         })
                     }}>
                         <Icon name="delete" size={30} color="red" />

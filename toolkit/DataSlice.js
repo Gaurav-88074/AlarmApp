@@ -5,6 +5,8 @@ const initialState = {
     allData : null,
     reduxHasData :false,
     refresh : true,
+    
+
 }
 const dataSlice = createSlice({
     name : "alarm",
@@ -15,6 +17,11 @@ const dataSlice = createSlice({
             console.log("message from redux : data has been set");
             state.reduxHasData = true
             console.log("message from redux : reduxHasData set to true");
+            const alarmObjList = action.payload;
+            alarmObjList.forEach((obj)=>{
+                state[obj.id] = obj;
+            })
+            // console.log(state);
         },
         addOneAlarmData(state,action){
             console.log(state.length);
@@ -30,7 +37,13 @@ const dataSlice = createSlice({
                 return obj.id == action.payload;
             })
             return res[0]['intervalList'];
-        }
+        },
+        setAlarmByAlarmId(state,action){
+            // console.log(action);
+            const alarmId    =  action.payload.alarmId;
+            const alarmObj   = action.payload.alarmObj;
+            state[alarmId]   = alarmObj;
+        },
     }
     
 })

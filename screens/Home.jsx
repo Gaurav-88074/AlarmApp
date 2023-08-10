@@ -39,18 +39,11 @@ const Home = () => {
                     name="AlarmScreen"
                     component={AlarmScreen}
                     options={{
-                        
                         title: 'Alarm',
-                        // headerShadowVisible : false,
                         headerTintColor: '#FFFF',
                         headerStyle: {
                             backgroundColor: 'black',
                         },
-                        // headerLargeTitle:true,
-                        // headerTransparent:true,
-                        // headerRight: () => {
-                        //     return <Icon name="check" size={26} color="#FFF" />
-                        // },
                     }}
                 />
                 <Stack.Screen
@@ -58,10 +51,7 @@ const Home = () => {
                     component={AlarmSettings}
                     options={{
                         title: 'Edit alarm',
-                        // headerShadowVisible : false,
                         headerTintColor: '#FFFF',
-                        // headerLargeTitle:true,
-                        // headerTransparent:true,
                         headerStyle: {
                             backgroundColor: 'black',
                         },
@@ -74,18 +64,7 @@ const Home = () => {
                     component={Interval}
                     options={{
                         title: 'Intervals',
-                        // headerShadowVisible : false,
                         headerTintColor: '#FFFF',
-                        // headerLargeTitle:true,
-                        // headerTransparent:true,
-                        // headerRight: () => {
-                        //     return <Icon
-
-                        //         name="check"
-                        //         size={26}
-                        //         color="#FFF"
-                        //     />;
-                        // },
                         headerStyle: {
                             backgroundColor: 'black',
                         },
@@ -98,10 +77,7 @@ const Home = () => {
                     component={AddIntervalScreen}
                     options={{
                         title: 'Add New Interval',
-                        // headerShadowVisible : false,
                         headerTintColor: '#FFFF',
-                        // headerLargeTitle:true,
-                        // headerTransparent:true,
                         headerStyle: {
                             backgroundColor: 'black',
                         },
@@ -114,10 +90,7 @@ const Home = () => {
                     component={AddAlarmScreen}
                     options={{
                         title: 'Add New Alarm',
-                        // headerShadowVisible : false,
                         headerTintColor: '#FFFF',
-                        // headerLargeTitle:true,
-                        // headerTransparent:true,
                         headerStyle: {
                             backgroundColor: 'black',
                         },

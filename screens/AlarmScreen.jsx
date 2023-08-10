@@ -14,11 +14,11 @@ import {
 import Icon from 'react-native-vector-icons/AntDesign';
 //-----------------------------------------
 import { useSelector } from "react-redux";
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
 //-----------------------------------------
 import AlarmCard from "../components/AlarmCard";
 //-----------------------------------------
-const AlarmScreen = ({ navigation,route }) => {
+const AlarmScreen = ({ navigation, route }) => {
     // console.log(navigation);
     // console.log(route);
     // console.log("main rendered");
@@ -26,19 +26,21 @@ const AlarmScreen = ({ navigation,route }) => {
         return state.dataReducer.reduxHasData;
     })
     const DATA = useSelector((state) => {
-        // console.log(state.dataReducer.AllVocabData);
         return state.dataReducer.allData;
     })
     const Item = (obj) => {
         // console.log(obj.item);
-        return <AlarmCard alarmObj={obj.item} navigation={navigation} key={obj.item.id} />;
+        return <AlarmCard alarmObj={obj.item} navigation={navigation} key={obj.item.id} alarmId = {obj.item.id}/>;
     };
+    //=========================
+    
+    //=========================
     return (
         <View style={styles.container}>
-            {
-                reduxHasData
-                &&
-                <SafeAreaView style={styles.headContainer}>
+            <SafeAreaView style={styles.headContainer}>
+                {
+                    reduxHasData
+                    &&
                     <FlatList
                         showsHorizontalScrollIndicator={false}
                         showsVerticalScrollIndicator={false}
@@ -47,18 +49,14 @@ const AlarmScreen = ({ navigation,route }) => {
                         renderItem={Item}
                         keyExtractor={(obj) => obj.id}
                     />
-                </SafeAreaView>
-            }
+                }
+            </SafeAreaView>
             <View style={styles.buttonContainer}>
                 <Pressable style={styles.buttonSpecialSection}
-                    android_ripple={{'color':"#242423"}}
+                    android_ripple={{ 'color': "#242423" }}
                     onPress={() => {
                         // console.log("I'm hit again");
-                        navigation.navigate('AddAlarmScreen', {
-                            hourDuration: '12',
-                            minuteDuration: '0',
-                            timeModeV: 'PM'
-                        });
+                        navigation.navigate('AddAlarmScreen', {});
                     }}
                 >
                     <Icon name="pluscircle" size={60} color="#242423" />
@@ -100,7 +98,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'black',
         // borderWidth: 2,
         // borderColor: 'red',
-        
+
     },
     buttonSpecialSection: {
         // borderWidth: 2,

@@ -18,29 +18,30 @@ import {
 import { useDispatch } from 'react-redux';
 import { dataSliceActions } from '../toolkit/DataSlice';
 import IntervalCard from "../components/IntervalCard";
-
-const Interval = ({ navigation,route }) => {
+import { useSelector } from "react-redux";
+const Interval = ({ navigation, route }) => {
   //-----------------------------------
   // const dispatch = useDispatch();
   //-----------------------------------
   // console.log(navigation);
-  const alarm_id = route.params.alarm_id;
-  const intervalList = route.params.intervalList;
+  // console.log("rendered");
+  const alarmId = route.params.alarmId;
+  const intervalList = useSelector((state) => {
+    return state.intervalReducer[alarmId];
+  });
   // console.log(intervalList);
   // const DATA = [
-    // {
-    //   id: "bd7acbea-c1b1-46c2-aed5-3ad53bb28ba",
-    //   minuteDuration: "25",
-    //   secondDuration: "3",
-    // },
-    // {
-    //   id: "3ac68afc-c605-48d3-a4f8-fbd9aa97f63",
-    //   minuteDuration: "10",
-    //   secondDuration: "15",
-    // },
+  // {
+  //   id: "bd7acbea-c1b1-46c2-aed5-3ad53bb28ba",
+  //   minuteDuration: "25",
+  //   secondDuration: "3",
+  // },
+  // {
+  //   id: "3ac68afc-c605-48d3-a4f8-fbd9aa97f63",
+  //   minuteDuration: "10",
+  //   secondDuration: "15",
+  // },
   // ]
-  
-  const DATA = intervalList;
   function makeItProperNumber(value) {
     if (value < 10) {
       return '0' + String(value);
@@ -53,8 +54,8 @@ const Interval = ({ navigation,route }) => {
       minuteDuration={makeItProperNumber(obj.item.minute)}
       secondDuration={makeItProperNumber(obj.item.second)}
       navigation={navigation}
-      alarm_id = {alarm_id}
-      id = {obj.item.id}
+      alarmId={alarmId}
+      id={obj.item.id}
     />;
   };
   return (
@@ -65,7 +66,7 @@ const Interval = ({ navigation,route }) => {
           showsHorizontalScrollIndicator={false}
           showsVerticalScrollIndicator={false}
           style={{ flex: 1 }}
-          data={DATA}
+          data={intervalList}
           renderItem={Item}
           keyExtractor={(obj) => obj.id}
         />
@@ -76,9 +77,7 @@ const Interval = ({ navigation,route }) => {
           onPress={() => {
             // console.log("I'm hit again");
             navigation.navigate('AddIntervalScreen', {
-              minuteDuration: '0',
-              secondDuration: '0',
-              alarm_id : alarm_id,
+              alarmId: alarmId,
             });
           }}
         >

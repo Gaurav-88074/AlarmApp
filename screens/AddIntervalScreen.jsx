@@ -20,23 +20,20 @@ import { insertOneAlarmInterval } from '../database/databaseSetup';
 import { IntervalModel } from '../models/IntervalModel';
 import uuid from 'react-native-uuid';
 import { useDispatch } from 'react-redux';
-import { dataSliceActions } from '../toolkit/DataSlice';
-const AddIntervalScreen = (props) => {
-    const alarm_id = props.route.params.alarm_id;
-    // console.log(alarm_id);
+import { intervalSliceActions } from '../toolkit/IntervalSlice';
+import { useSelector } from 'react-redux';
+const AddIntervalScreen = ({navigation,route}) => {
+    const alarmId = route.params.alarmId;
+    // console.log(alarmId);
     //--------------------------------------------------
     const dispatch = useDispatch();
-
+    //---------------------------------------------
+    const intervalList = useSelector((state) => {
+        return state.intervalReducer.alarmId;
+      });
     //-----------------------------------------------------
-    // console.log(props.route);
-    const minuteDuration = props.route.params.minuteDuration;
-    const secondDuration = props.route.params.secondDuration;
-    // const minuteDuration = "0";
-    // const secondDuration = "0";
-    // console.log(value);
-    // const value = props.naviagtion.params.value 
-    const [minutes, setMinutes] = useState(minuteDuration);
-    const [seconds, setSeconds] = useState(secondDuration);
+    const [minutes, setMinutes] = useState("0");
+    const [seconds, setSeconds] = useState("0");
     //-----------------------------------------------------
     function makeItProperNumber(value) {
         if (value < 10) {
@@ -47,7 +44,7 @@ const AddIntervalScreen = (props) => {
     //-------------------------------------------
     //-----------------------------------------------------
     useEffect(() => {
-        props.navigation.setOptions({
+        navigation.setOptions({
             headerRight: () => {
                 return <>
                     <Pressable
@@ -55,18 +52,25 @@ const AddIntervalScreen = (props) => {
                             // console.log("got hit",minutes,seconds);
                             const intervalObj = new IntervalModel(
                                 uuid.v4(),
-                                alarm_id,
+                                alarmId,
                                 minutes,
                                 seconds,
                                 true
                             );
                             insertOneAlarmInterval(intervalObj).then(()=>{
-                                dispatch(dataSliceActions.toggleRefresh());
-                                props.navigation.popToTop();
+                                dispatch(intervalSliceActions.updateIntervalListOfThisAlarmId(
+                                    {
+                                        alarmId : alarmId,
+                                        intervalObj : intervalObj
+                                    }
+                                ))
+                                navigation.goBack();
+                                // dispatch(dataSliceActions.toggleRefresh());
+                                // props.navigation.popToTop();
                             })
                         }}
                     >
-                        <Icon name="check" size={26} color="#FFF" />
+                        <Icon name="check" size={28} color="#FFF" />
                     </Pressable>
                 </>
             },
