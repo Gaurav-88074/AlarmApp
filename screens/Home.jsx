@@ -27,6 +27,11 @@ Notifications.setNotificationHandler({
     },
 });
 //-------------------------------------
+Notifications.addNotificationResponseReceivedListener((response)=>{
+    // console.log("I got him");
+})
+
+//-------------------------------------
 const Stack = createNativeStackNavigator();
 const Home = () => {
     //----------------------------------------------------------

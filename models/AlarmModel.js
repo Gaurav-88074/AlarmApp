@@ -12,7 +12,7 @@ export class AlarmModel{
         this.active_status=active_status,
         this.ends_after=ends_after,
         this.schedule_date = String(schedule_date),
-        this.intervalList = intervalList
+        this.intervalList = []
         // this.intervalList1 = Array.from(intervalList).map((obj)=>{
             // return new IntervalModel(obj.id,obj.alarm_id,obj.minute,obj.second,obj,active_status);
         // });

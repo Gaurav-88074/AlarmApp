@@ -20,6 +20,7 @@ import { IntervalModel } from '../models/IntervalModel';
 import { FetchAndSetRedux } from '../logic/ReduxMgmt';
 import { FetchOneAlarmInterval } from './databaseSetup';
 import {intervalSliceActions} from '../toolkit/IntervalSlice';
+import { loadingSliceActions } from '../toolkit/LoadingSlice';
 //----------------------------------------
 const DBcomputation = () => {
     const dispatch = new useDispatch();
@@ -58,6 +59,9 @@ const DBcomputation = () => {
             const pc = [];
             for (let i = 0; i < length; i++) {
                 const obj = arrayOfAlarms[i];
+                dispatch(loadingSliceActions.setLoadingStateByAlarmId({
+                    alarmId : obj.id
+                }))
                 pc.push(FetchOneAlarmInterval(obj.id));//promise
             }
             return new Promise.all(pc)

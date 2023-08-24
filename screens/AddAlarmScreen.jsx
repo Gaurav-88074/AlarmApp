@@ -33,6 +33,7 @@ import { convertTo12HourFormat } from '../logic/TimeLogic';
 import { computeScheduleDate } from '../logic/TimeLogic';
 import { computeDifferenceStatement } from '../logic/TimeLogic';
 import { giveAnswer } from '../logic/TimeLogic';
+import EndsAfterSection from '../components/EndsAfterSection';
 //-----------------------------------------------------------
 const AddAlarmScreen = ({ navigation, route }) => {
     // console.log(navigation);
@@ -58,27 +59,28 @@ const AddAlarmScreen = ({ navigation, route }) => {
     const [id, setId] = useState(uuid.v4())
     const [label, setLabel] = useState("Alarm")
     //--------
-    const [hour, setHours] = useState(currentDate.getHours());
+    const [hour, setHours] = useState(currentDate.getHours()%12);
     const [minute, setMinutes] = useState(currentDate.getMinutes());
     //--------
-    const [mode, setMode] = useState(hour >= 12 ? "PM" : "AM");
-    const [ringtone, setRingtone] = useState("default")
+    const [mode, setMode] = useState(currentDate.getHours() >= 12 ? "PM" : "AM");
+    const [ringtone, setRingtone] = useState("Default")
     const [ringtone_location, setRingtone_location] = useState("random_location")
     const [vibrate, setVibrate] = useState(true);
     const [active_status, setActive_status] = useState(false);
-    const [ends_after, setEnds_after] = useState("10")
+    const [ends_after, setEnds_after] = useState(10);
     //-----------------------------------------------------------------------
     const toggleSwitch = () => setVibrate(previousState => !previousState);
     //-----------------------------------------------------------------------
     const saveHeaderButtonHandler = () => {
         //-------------------
         async function getComputationDone(){
-            return new Promise((resolve,reject)=>{
-                resolve(convertTo24HourFormat(hour,minute,mode));
-            })
+            // return new Promise((resolve,reject)=>{
+            //     resolve(convertTo24HourFormat(hour,minute,mode));
+            // })
+            return [hour,minute]
         }
         getComputationDone().then(([hour, minute])=>{
-            console.log(hour,minute);
+            // console.log(hour,minute);
             const alarmObj = new AlarmModel({
                 id, label, hour, minute,
                 mode, ringtone, ringtone_location,
@@ -86,10 +88,14 @@ const AddAlarmScreen = ({ navigation, route }) => {
             })
             return alarmObj;
         }).then((alarmObj)=>{
-            console.log(alarmObj);
+            // console.log(alarmObj);
             insertOneAlarm(alarmObj).then(() => {
-                navigation.goBack();
                 dispatch(dataSliceActions.toggleRefresh());
+                // dispatch(dataSliceActions.addAlarmByAlarmId({
+                //     alarmId : alarmObj.id,
+                //     alarmObj : alarmObj
+                // }))
+                navigation.goBack();
             }).catch(()=>{
                 console.log("we got issue");
             })
@@ -161,8 +167,13 @@ const AddAlarmScreen = ({ navigation, route }) => {
     }
     //-----------------------------------------------------------------------
     function displayTimeInText(hour,minute,mode) {
-        const [hourIn12Format,minuteIn12Format]=convertTo12HourFormat(hour,minute,mode);
-        return `${makeItProperNumber(hourIn12Format)} : ${makeItProperNumber(minuteIn12Format)} ${mode}`
+        // const [hourIn12Format,minuteIn12Format]=convertTo12HourFormat(hour,minute,mode);
+        // return `${makeItProperNumber(hourIn12Format)} : ${makeItProperNumber(minuteIn12Format)} ${mode}`
+        return `${makeItProperNumber(hour)} : ${makeItProperNumber(minute)} ${mode}`
+    }
+    const [endAfterShow, setEndAfterShow] = useState(false);
+    function onEndsAfterHandler(params) {
+        setEndAfterShow(prevState=>!prevState);
     }
     //-----------------------------------------------------------------------
     return (
@@ -273,7 +284,7 @@ const AddAlarmScreen = ({ navigation, route }) => {
                         flex: 1,
                     }}
                     // initialNumToRender={6}
-                    data={["Today", "Sun", "Mon", "Tue", "Wed", "Thru", "Fri", "Sat"]}
+                    data={["Sun", "Mon", "Tue", "Wed", "Thru", "Fri", "Sat"]}
                     renderItem={DaysButtonComponent}
                     keyExtractor={obj => obj}
                 />
@@ -288,16 +299,28 @@ const AddAlarmScreen = ({ navigation, route }) => {
                     value={vibrate}
                 />
             </View>
-            <View style={styles.optionSection}>
+            <Pressable style={styles.optionSection}
+                onPress={onEndsAfterHandler}
+            >
                 <Text style={styles.optionTextLeft}>Ends After</Text>
-                <Text style={styles.optionTextRight}>6hrs</Text>
+                <Text style={styles.optionTextRight}>{`${ends_after} hrs`}</Text>
                 <Icon name="right" size={16} color="#505050" />
-            </View>
+            </Pressable>
             {/* <View style={styles.optionSection}>
                 <Text style={styles.optionTextLeft}>Label</Text>
                 <Text style={styles.optionTextRight}>Alarm</Text>
                 <Icon name="edit" size={16} color="#505050" />
             </View> */}
+            {
+                endAfterShow
+                &&
+                <EndsAfterSection 
+                    onEndsAfterHandler={onEndsAfterHandler}
+                    setEnds_after = {setEnds_after}
+                >
+
+                </EndsAfterSection>
+            }
         </View>
     );
 };
@@ -359,7 +382,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderColor: 'black',
         borderWidth: 2,
-        height: Dimensions.get('window').height * 0.08,
+        height: Dimensions.get('window').height * 0.075,
         width: Dimensions.get('window').width,
         backgroundColor: 'black',
         paddingLeft: 20,
@@ -425,7 +448,7 @@ const styles = StyleSheet.create({
         textAlignVertical: 'center',
         textAlign: 'right',
         color: '#505050',
-        fontWeight: '600',
+        // fontWeight: '600',
         marginRight: 3,
         // borderColor: "blue",
         // borderWidth: 2,

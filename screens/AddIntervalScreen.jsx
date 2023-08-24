@@ -32,7 +32,7 @@ const AddIntervalScreen = ({navigation,route}) => {
         return state.intervalReducer.alarmId;
       });
     //-----------------------------------------------------
-    const [minutes, setMinutes] = useState("0");
+    const [minutes, setMinutes] = useState("5");
     const [seconds, setSeconds] = useState("0");
     //-----------------------------------------------------
     function makeItProperNumber(value) {
@@ -102,7 +102,7 @@ const AddIntervalScreen = ({navigation,route}) => {
                             flex: 1,
                         }}
                         initialNumToRender={10}
-                        data={[...Array(60).keys()]}
+                        data={[...Array(60).keys()].slice(5)}
                         renderItem={obj => {
                             return (
                                 <Pressable

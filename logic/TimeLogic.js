@@ -15,7 +15,7 @@ const selectDate = (yourHours, yourMinute, currentHour, currentMinute) => {
     if (yourHours - currentHour < 0) {
         return false;
     }
-    if (yourMinute - currentMinute <= 0) {
+    if ((yourHours - currentHour)==0 && yourMinute - currentMinute <= 0) {
         return false;
     }
     return true;

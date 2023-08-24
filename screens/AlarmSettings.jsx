@@ -28,11 +28,18 @@ import { DeleteIntervalByAlarmID } from '../database/databaseSetup';
 //-----------------------------------------------------------
 import { convertTo24HourFormat } from '../logic/TimeLogic';
 import { convertTo12HourFormat } from '../logic/TimeLogic';
+import EndsAfterSection from '../components/EndsAfterSection';
+import * as Notifications from 'expo-notifications';
 //-----------------------------------------------------------
 const AlarmSettings = ({ navigation, route }) => {
+    let alarmModelObj = route.params.alarmModelObj;
+    //---------------
+    const intervalListFromRedux = useSelector((state) => {
+        return state.intervalReducer[alarmModelObj.id];
+    });
+    //---------------
     const dispatch = useDispatch();
     // console.log(route);
-    let alarmModelObj = route.params.alarmModelObj;
     //-----------------------------------------------------
     //well done Gaurav
     const [id, setId] = useState(alarmModelObj.id)
@@ -44,7 +51,7 @@ const AlarmSettings = ({ navigation, route }) => {
     const [ringtone_location, setRingtone_location] = useState(alarmModelObj.ringtone_location);
     const [vibrate, setVibrate] = useState(alarmModelObj.vibrate === "1" ? true : false);
     const [active_status, setActive_status] = useState(alarmModelObj.active_status === "1" ? true : false);
-    const [ends_after, setEnds_after] = useState(alarmModelObj.ends_after);
+    const [ends_after, setEnds_after] = useState(parseInt(alarmModelObj.ends_after));
     const [intervalList, setIntervalList] = useState(alarmModelObj.intervalList);
     // console.log(intervalList);
     //-----------------------------------------------------
@@ -60,6 +67,17 @@ const AlarmSettings = ({ navigation, route }) => {
         return !previousState;
     });
     //-----------------------------------------------------------------------
+    async function cancelNotificationHandler(params) {
+        Notifications.cancelScheduledNotificationAsync(alarmModelObj.id);
+        for (let count = 0; count < 300; count++) {
+            const notificationId = alarmModelObj.id + String(count);
+            Notifications.cancelScheduledNotificationAsync(notificationId);
+        }
+        // intervalListFromRedux.forEach(async obj => {
+        //     Notifications.cancelScheduledNotificationAsync(obj.id);
+        // });
+        // console.log("cancelled all");
+    }
     //-----------------------------------------------------
     useEffect(() => {
         setActive_status(false);
@@ -82,16 +100,17 @@ const AlarmSettings = ({ navigation, route }) => {
                             alarmModelObj.ends_after = ends_after;
                             alarmModelObj.intervalList = intervalList;
                             //------------
-                            async function getComputationDone() {
-                                return new Promise((resolve, reject) => {
-                                    resolve(convertTo24HourFormat(hour, minute, mode));
-                                })
-                            }
-                            getComputationDone().then(([hoursIn24FormatTemp, minutesIn24FormatTemp]) => {
-                                alarmModelObj.hour = hoursIn24FormatTemp;
-                                alarmModelObj.minute = minutesIn24FormatTemp;
+                            // async function getComputationDone() {
+                            //     return new Promise((resolve, reject) => {
+                            //         resolve(convertTo24HourFormat(hour, minute, mode));
+                            //     })
+                            // }
+                            // getComputationDone().then(([hoursIn24FormatTemp, minutesIn24FormatTemp]) => {
+                            //     alarmModelObj.hour = hoursIn24FormatTemp;
+                            //     alarmModelObj.minute = minutesIn24FormatTemp;
                                 alarmModelObj.active_status = false;
                                 // console.log(alarmModelObj);
+                                
                                 updateOneAlarm(alarmModelObj).then(() => {
                                     navigation.goBack();
                                     dispatch(dataSliceActions.setAlarmByAlarmId(
@@ -100,8 +119,10 @@ const AlarmSettings = ({ navigation, route }) => {
                                             alarmObj :alarmModelObj
                                         }
                                     ));
+                                    cancelNotificationHandler();
+                                    
                                 })
-                            })
+                            // })
                         }}
                     >
                         <Icon name="check" size={30} color="#FFF" />
@@ -114,8 +135,9 @@ const AlarmSettings = ({ navigation, route }) => {
         vibrate, active_status, ends_after, intervalList])
     //-----------------------------------------------------------------------
     function displayTimeInText(hour, minute, mode) {
-        const [hourIn12Format, minuteIn12Format] = convertTo12HourFormat(hour, minute, mode);
-        return `${makeItProperNumber(hourIn12Format)} : ${makeItProperNumber(minuteIn12Format)} ${mode}`
+        // const [hourIn12Format, minuteIn12Format] = convertTo12HourFormat(hour, minute, mode);
+        // return `${makeItProperNumber(hourIn12Format)} : ${makeItProperNumber(minuteIn12Format)} ${mode}`
+        return `${makeItProperNumber(hour)} : ${makeItProperNumber(minute)} ${mode}`;
     }
     //-----------------------------------------------------------------------
     // dispatch(intervalSliceActions.setIntervalListOfThisAlarmId({
@@ -124,6 +146,10 @@ const AlarmSettings = ({ navigation, route }) => {
     // }))
     // this was  creating an probelem
     //-----------------------------------------------------------------------
+    const [endAfterShow, setEndAfterShow] = useState(false);
+    function onEndsAfterHandler(params) {
+        setEndAfterShow(prevState=>!prevState);
+    }
     return (
         <View style={styles.container}>
             <View style={styles.dateSection}>
@@ -157,6 +183,7 @@ const AlarmSettings = ({ navigation, route }) => {
                     <FlatList
                         showsHorizontalScrollIndicator={false}
                         showsVerticalScrollIndicator={false}
+                        // initialScrollIndex={parseInt(alarmModelObj.hour)}
                         style={{
                             flex: 1,
                         }}
@@ -185,6 +212,8 @@ const AlarmSettings = ({ navigation, route }) => {
                     <FlatList
                         showsHorizontalScrollIndicator={false}
                         showsVerticalScrollIndicator={false}
+                        
+                        // initialScrollIndex={parseInt(alarmModelObj.minute)}
                         style={{
                             flex: 1,
                         }}
@@ -239,11 +268,23 @@ const AlarmSettings = ({ navigation, route }) => {
                     value={isEnabled}
                 />
             </View>
-            <View style={styles.optionSection}>
+            <Pressable style={styles.optionSection}
+                onPress={onEndsAfterHandler}
+            >
                 <Text style={styles.optionTextLeft}>Ends After</Text>
                 <Text style={styles.optionTextRight}>{`${ends_after} hrs`}</Text>
                 <Icon name="right" size={16} color="#505050" />
-            </View>
+            </Pressable>
+            {
+                endAfterShow
+                &&
+                <EndsAfterSection 
+                    onEndsAfterHandler={onEndsAfterHandler}
+                    setEnds_after = {setEnds_after}
+                >
+
+                </EndsAfterSection>
+            }
             <View style={styles.delButtonSection}>
                 <Pressable
                     onPress={() => {
@@ -253,6 +294,7 @@ const AlarmSettings = ({ navigation, route }) => {
                                 dispatch(dataSliceActions.toggleRefresh())
                                 navigation.goBack();
                             })
+                            cancelNotificationHandler();
                         })
 
                     }}>
@@ -298,7 +340,7 @@ const styles = StyleSheet.create({
         // borderWidth: 2,
     },
     number: {
-        fontSize: 40,
+        fontSize: 36,
         width: '100%',
         textAlignVertical: 'center',
         textAlign: 'center',
@@ -321,7 +363,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         // borderColor: '#ffff',
         // borderWidth: 2,
-        height: Dimensions.get('window').height * 0.08,
+        height: Dimensions.get('window').height * 0.075,
         width: Dimensions.get('window').width,
         backgroundColor: 'black',
         paddingLeft: 20,
@@ -338,7 +380,7 @@ const styles = StyleSheet.create({
         // borderColor: '#ffff',
     },
     optionTextLeft: {
-        fontSize: 20,
+        fontSize: 19,
         width: '40%',
         textAlignVertical: 'center',
         textAlign: 'left',
@@ -353,7 +395,7 @@ const styles = StyleSheet.create({
         textAlignVertical: 'center',
         textAlign: 'right',
         color: '#505050',
-        fontWeight: '600',
+        // fontWeight: '600',
         marginRight: 3,
         // borderColor: "blue",
         // borderWidth: 2,

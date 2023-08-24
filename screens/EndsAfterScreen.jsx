@@ -11,7 +11,8 @@ import {
     Switch,
     ToastAndroid
 } from 'react-native';
-const EndsAfterScreen = () => {
+const EndsAfterScreen = ({navigation,route}) => {
+  
   return (
     <View>
 

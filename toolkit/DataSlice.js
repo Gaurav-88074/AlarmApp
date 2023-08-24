@@ -44,6 +44,13 @@ const dataSlice = createSlice({
             const alarmObj   = action.payload.alarmObj;
             state[alarmId]   = alarmObj;
         },
+        addAlarmByAlarmId(state,action){
+            // console.log(action);
+            const alarmId    =  action.payload.alarmId;
+            const alarmObj   = action.payload.alarmObj;
+            state.allData = [...state.allData,alarmObj];
+            state[alarmId]   = alarmObj;
+        },
     }
     
 })

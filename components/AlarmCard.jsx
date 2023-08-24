@@ -10,7 +10,9 @@ import {
     Dimensions,
     Pressable,
     Switch,
+    FlatList,
     ToastAndroid,
+    ActivityIndicator
 } from 'react-native';
 import ToggleSwitch from 'toggle-switch-react-native';
 import { AlarmModel } from '../models/AlarmModel';
@@ -19,11 +21,14 @@ import * as Notifications from 'expo-notifications';
 import { updateOneAlarm } from '../database/databaseSetup';
 import { dataSliceActions } from '../toolkit/DataSlice';
 import { intervalSliceActions } from '../toolkit/IntervalSlice';
+import { loadingSliceActions } from '../toolkit/LoadingSlice';
 //-------------
 import { computeScheduleDate } from '../logic/TimeLogic';
 import { computeDifferenceStatement } from '../logic/TimeLogic';
 import { convertTo12HourFormat } from '../logic/TimeLogic';
+import { convertTo24HourFormat } from '../logic/TimeLogic';
 import { scheduleAlarmById } from '../logic/ScheduleNotification';
+import IntervalDetailCard from './IntervalDetailCard';
 import { useSelector } from 'react-redux';
 //-----------
 const AlarmCard = ({ navigation, alarmId }) => {
@@ -35,6 +40,9 @@ const AlarmCard = ({ navigation, alarmId }) => {
     const intervalListFromRedux = useSelector((state) => {
         return state.intervalReducer[alarmId];
     });
+    const showLoadingStateFromRedux = useSelector((state)=>{
+        return state.loadingReducer[alarmId];
+    })
     // console.log(alarmObjFromRedux);
     //------------------------------------------------------
     const dispatch = useDispatch();
@@ -43,76 +51,154 @@ const AlarmCard = ({ navigation, alarmId }) => {
         new AlarmModel(alarmObjFromRedux),
     );
     useEffect(() => {
-        setAlarmModelObj(new AlarmModel({...alarmObjFromRedux,intervalListFromRedux}));
-    }, [alarmObjFromRedux,intervalListFromRedux]);
+        setAlarmModelObj(new AlarmModel({ ...alarmObjFromRedux, intervalListFromRedux }));
+    }, [alarmObjFromRedux, intervalListFromRedux]);
     // console.log(alarmModelObj);
     //=================================================================
     //=================================================================
 
     async function scheduleNotificationHandler(params) {
+        dispatch(loadingSliceActions.toggleLoadingStateByAlarmId({
+            alarmId : alarmModelObj.id
+        }))
         Notifications.cancelScheduledNotificationAsync(alarmModelObj.id);
-        async function performSchedulingComputation(params) {
+        // async function performSchedulingComputation(params) {
+        //     return new Promise((resolve, reject) => {
+        //         resolve(computeScheduleDate(alarmModelObj.hour, alarmModelObj.minute));
+        //     });
+        // }
+        async function getConvertingTaskDone() {
             return new Promise((resolve, reject) => {
-                resolve(computeScheduleDate(alarmModelObj.hour, alarmModelObj.minute));
-            });
+                resolve(convertTo24HourFormat(
+                    alarmModelObj.hour,
+                    alarmModelObj.minute,
+                    alarmModelObj.mode
+                ));
+            })
         }
-        performSchedulingComputation().then(schedule_date => {
-            // console.log(schedule_date);
-            setAlarmInStatement(
-                computeDifferenceStatement(
-                    new Date(Date.now()),
-                    new Date(schedule_date),
-                ),
-            );
+        getConvertingTaskDone()
+            .then(async([hoursIn24FormatTemp, minutesIn24FormatTemp]) => {
+                // alarmModelObj.hour = hoursIn24FormatTemp;
+                // alarmModelObj.minute = minutesIn24FormatTemp;
+                return new Promise((resolve, reject) => {
+                    resolve(computeScheduleDate(hoursIn24FormatTemp, minutesIn24FormatTemp));
+                });
+            })
+            .then(async (schedule_date) => {
+                // console.log(schedule_date);
+                setAlarmInStatement(
+                    computeDifferenceStatement(
+                        new Date(Date.now()),
+                        new Date(schedule_date),
+                    ),
+                );
 
-            Notifications.scheduleNotificationAsync({
-                content: {
-                    title: 'Alarm',
-                    body: "I'm ringing right now",
-                    data: {
-                        username: 'Gaurav',
-                    },
-                    // sound: "brown",
-                    vibrate: [1, 2, 1],
-                },
-                // trigger : null
-                trigger: {
-                    seconds:
-                        (schedule_date.getTime() - new Date(Date.now()).getTime()) / 1000,
-                },
-                // channelId: 'special'
-                identifier: alarmModelObj.id,
-            });
-            // console.log(alarmModelObj);
-            let triggerSeconds = (schedule_date.getTime() - new Date(Date.now()).getTime()) / 1000;
-            intervalListFromRedux.forEach(async obj => {
-                triggerSeconds += Number(obj.minute) * 60 + Number(obj.second);
                 Notifications.scheduleNotificationAsync({
                     content: {
-                        title: 'Alarm Interval',
+                        title: 'Alarm',
                         body: "I'm ringing right now",
                         data: {
                             username: 'Gaurav',
                         },
                         // sound: "brown",
                         vibrate: [1, 2, 1],
+                        
                     },
                     // trigger : null
                     trigger: {
-                        seconds: triggerSeconds,
+                        
+                        seconds:
+                            (schedule_date.getTime() - new Date(Date.now()).getTime()) / 1000,
+                        
                     },
                     // channelId: 'special'
-                    identifier: obj.id,
+                    identifier: alarmModelObj.id,
+                    
                 });
-            });
-        });
+                // console.log(alarmModelObj);
+                let triggerSeconds = (schedule_date.getTime() - new Date(Date.now()).getTime()) / 1000;
+                const ends_after_seconds = parseInt(alarmModelObj.ends_after) * 60 * 60 + triggerSeconds;//totalSeconds
+                let arrayIndex = 0;
+                let length = intervalListFromRedux.length;
+                if (length == 0) {
+                    return;
+                }
+                let count = 0;
+                const allIntervalNotificationPromiseArray = [];
+                while (triggerSeconds < ends_after_seconds) {
+                    const obj = intervalListFromRedux[arrayIndex]
+                    const notificationId = alarmModelObj.id + String(count);
+                    triggerSeconds += Number(obj.minute) * 60 + Number(obj.second);
+                    const subscription = Notifications.scheduleNotificationAsync({
+                        content: {
+                            title: `Alarm Interval ${count+1}`,
+                            body: `Interval Type ${makeItProperNumber(obj.minute)}M : ${makeItProperNumber(obj.second)}S`,
+                            data: {
+                                username: 'Gaurav',
+                            },
+                            // sound: "brown",
+                            vibrate: [1, 2, 1],
+                        },
+                        // trigger : null
+                        trigger: {
+                            seconds:  triggerSeconds,
+                        },
+                        // channelId: 'special'
+                        // identifier: obj.id,
+                        identifier: notificationId,
+                    });
+                    allIntervalNotificationPromiseArray.push(subscription);
+                    //------------------
+                    arrayIndex += 1
+                    arrayIndex %= length;
+                    count += 1;
+                    //------------------
+                }
+                
+                return new Promise.all(allIntervalNotificationPromiseArray).then(()=>{
+                    return count;
+                })
+                // intervalListFromRedux.forEach(async obj => {
+                //     triggerSeconds += Number(obj.minute) * 60 + Number(obj.second);
+                //     Notifications.scheduleNotificationAsync({
+                //         content: {
+                //             title: 'Alarm Interval',
+                //             body: "I'm ringing right now",
+                //             data: {
+                //                 username: 'Gaurav',
+                //             },
+                //             // sound: "brown",
+                //             vibrate: [1, 2, 1],
+                //         },
+                //         // trigger : null
+                //         trigger: {
+                //             seconds: triggerSeconds,
+                //         },
+                //         // channelId: 'special'
+                //         identifier: obj.id,
+                //     });
+                // });
+            })
+            .then((count)=>{
+                // console.log(count);
+                dispatch(loadingSliceActions.toggleLoadingStateByAlarmId({
+                    alarmId : alarmModelObj.id
+                }))
+            })
+        // performSchedulingComputation().then(schedule_date => {
+
+        // });
     }
     //=================================================================
     async function cancelNotificationHandler(params) {
         Notifications.cancelScheduledNotificationAsync(alarmModelObj.id);
-        intervalListFromRedux.forEach(async obj => {
-            Notifications.cancelScheduledNotificationAsync(obj.id);
-        });
+        for (let count = 0; count < 300; count++) {
+            const notificationId = alarmModelObj.id + String(count);
+            Notifications.cancelScheduledNotificationAsync(notificationId);
+        }
+        // intervalListFromRedux.forEach(async obj => {
+        //     Notifications.cancelScheduledNotificationAsync(obj.id);
+        // });
     }
     //=================================================================
     const [isEnabled, setIsEnabled] = useState(
@@ -163,13 +249,29 @@ const AlarmCard = ({ navigation, alarmId }) => {
     }
 
     useEffect(() => {
+        //we have our own function , we are so rich
+        //-----------
+        async function getConvertingTaskDone() {
+            return new Promise((resolve, reject) => {
+                resolve(convertTo24HourFormat(
+                    alarmModelObj.hour,
+                    alarmModelObj.minute,
+                    alarmModelObj.mode
+                ));
+            })
+        }
+        //-------------
         async function performSchedulingComputation(params) {
             return new Promise((resolve, reject) => {
                 resolve(computeScheduleDate(alarmModelObj.hour, alarmModelObj.minute));
             });
         }
         const x = setInterval(() => {
-            performSchedulingComputation().then(schedule_date => {
+            getConvertingTaskDone().then(([hoursIn24FormatTemp, minutesIn24FormatTemp]) => {
+                return new Promise((resolve, reject) => {
+                    resolve(computeScheduleDate(hoursIn24FormatTemp, minutesIn24FormatTemp));
+                });
+            }).then(schedule_date => {
                 // console.log(schedule_date);
                 setAlarmInStatement(
                     computeDifferenceStatement(
@@ -177,8 +279,8 @@ const AlarmCard = ({ navigation, alarmId }) => {
                         new Date(schedule_date),
                     ),
                 );
-            });
-        }, 1000);
+            })
+        }, 990);
         return () => {
             clearInterval(x);
         };
@@ -197,9 +299,9 @@ const AlarmCard = ({ navigation, alarmId }) => {
     //------------------------------------------------------------------
     return (
         <View style={{
-                ...styles.alarmCard,
-                height:  isEnabled ?  Dimensions.get('window').height * 0.26 : Dimensions.get('window').height * 0.13
-            }}>
+            ...styles.alarmCard,
+            height: isEnabled ? Dimensions.get('window').height * 0.26 : Dimensions.get('window').height * 0.13
+        }}>
             <View style={styles.container}>
                 <Pressable
                     onPress={() => {
@@ -240,22 +342,47 @@ const AlarmCard = ({ navigation, alarmId }) => {
                         onValueChange={toggleSwitch}
                         value={isEnabled}
                     /> */}
-
-                        <ToggleSwitch
-                            isOn={isEnabled}
-                            onColor="#0073dd"
-                            offColor="#505050"
-                            // label="Example label"
-                            // labelStyle={{ color: "black", fontWeight: "900" }}
-                            size="medium"
-                            onToggle={toggleSwitch}
-                            animationSpeed={200}
-                        />
+                        {
+                            showLoadingStateFromRedux==true
+                            &&
+                            <ActivityIndicator size="large"  color="#0073dd" />
+                        }
+                        {
+                            showLoadingStateFromRedux==false
+                            &&
+                            <ToggleSwitch
+                                isOn={isEnabled}
+                                onColor="#0073dd"
+                                offColor="#505050"
+                                // label="Example label"
+                                // labelStyle={{ color: "black", fontWeight: "900" }}
+                                size="medium"
+                                onToggle={toggleSwitch}
+                                animationSpeed={200}
+                            />
+                        }
                     </Pressable>
                 </Pressable>
             </View>
-            <View style = {styles.intervalListScrollSection} >
-                    
+            <View style={styles.intervalListScrollSection} >
+                {
+                    isEnabled
+                    &&
+                    <FlatList
+                        showsHorizontalScrollIndicator={false}
+                        showsVerticalScrollIndicator={false}
+                        horizontal={true}
+                        style={{
+                            flex: 1,
+                        }}
+                        initialNumToRender={2}
+                        data={intervalListFromRedux}
+                        renderItem={obj => {
+                            return <IntervalDetailCard obj={obj.item} index={obj.index} />
+                        }}
+                        keyExtractor={obj => obj.id}
+                    />
+                }
             </View>
         </View>
     );
@@ -263,13 +390,13 @@ const AlarmCard = ({ navigation, alarmId }) => {
 
 export default AlarmCard;
 const styles = StyleSheet.create({
-    alarmCard : {
+    alarmCard: {
         // height: Dimensions.get('window').height * 0.13, //mentioned above
         width: Dimensions.get('window').width * 0.94,
         marginVertical: 7,
-        flexDirection : 'column',
+        flexDirection: 'column',
         alignItems: 'center',
-        // backgroundColor :'#242424',
+        backgroundColor: '#242424',
         borderRadius: 15,
         overflow: 'hidden',
     },
@@ -283,14 +410,15 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
 
         borderRadius: 15,
-        
+
         overflow: 'hidden',
         // position :position
     },
-    intervalListScrollSection : {
-        height: Dimensions.get('window').height * 0.13, 
+    intervalListScrollSection: {
+        height: Dimensions.get('window').height * 0.13,
         width: Dimensions.get('window').width * 0.94,
-        backgroundColor :'red',
+
+        // backgroundColor: 'red',
     }
     ,
     pressableContainer: {
